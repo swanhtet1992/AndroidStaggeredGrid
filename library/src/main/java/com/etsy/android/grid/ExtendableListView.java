@@ -944,11 +944,13 @@ public abstract class ExtendableListView extends AbsListView {
             invalidate();
             mPerformClick = new PerformClick();
         }
-        final PerformClick performClick = mPerformClick;
-        performClick.mClickMotionPosition = mMotionPosition;
-        performClick.rememberWindowAttachCount();
-
-        performClick.run();
+        final int motionPosition = mMotionPosition;
+        if (!mDataChanged && mAdapter.isEnabled(motionPosition)) {
+            final PerformClick performClick = mPerformClick;
+            performClick.mClickMotionPosition = motionPosition;
+            performClick.rememberWindowAttachCount();
+            performClick.run();
+        }
         return true;
     }
 
@@ -1892,10 +1894,10 @@ public abstract class ExtendableListView extends AbsListView {
         void start(int initialVelocity) {
             int initialY = initialVelocity < 0 ? Integer.MAX_VALUE : 0;
             mLastFlingY = initialY;
+            mScroller.forceFinished(true);
             mScroller.fling(0, initialY, 0, initialVelocity, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
-
             mTouchMode = TOUCH_MODE_FLINGING;
-            post(this);
+            postOnAnimate(this);
         }
 
         void startScroll(int distance, int duration) {
@@ -1903,7 +1905,7 @@ public abstract class ExtendableListView extends AbsListView {
             mLastFlingY = initialY;
             mScroller.startScroll(0, initialY, 0, distance, duration);
             mTouchMode = TOUCH_MODE_FLINGING;
-            post(this);
+            postOnAnimate(this);
         }
 
         private void endFling() {
@@ -1956,7 +1958,7 @@ public abstract class ExtendableListView extends AbsListView {
                     if (more && !atEnd) {
                         invalidate();
                         mLastFlingY = y;
-                        post(this);
+                        postOnAnimate(this);
                     }
                     else {
                         endFling();
@@ -1965,6 +1967,11 @@ public abstract class ExtendableListView extends AbsListView {
                 }
             }
         }
+
+    }
+
+    private void postOnAnimate(Runnable runnable) {
+        ViewCompat.postOnAnimation(this, runnable);
     }
 
     // //////////////////////////////////////////////////////////////////////////////////////////
